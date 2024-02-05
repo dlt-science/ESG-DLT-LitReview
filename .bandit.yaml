@@ -1,0 +1,7 @@
+skips: ['B301']
+exclude_dirs:
+    - venv
+    - .git
+    - __pycache__
+    - .tox
+    - src/models/pre-train_bert

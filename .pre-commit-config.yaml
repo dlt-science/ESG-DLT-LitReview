@@ -1,0 +1,56 @@
+exclude: 'docs|node_modules|migrations|.git|.tox'
+default_stages: [commit]
+fail_fast: true
+
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+        exclude: 'data/.*|models/.*|notebooks/.*'
+    -   id: end-of-file-fixer
+        exclude: 'data/.*|models/.*|notebooks/.*'
+    -   id: check-yaml
+    -   id: check-added-large-files
+        exclude: 'data/.*|models/.*'
+
+-   repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+    -   id: black
+        exclude: 'data/.*|models/.*|notebooks/.*'
+
+-   repo: https://github.com/timothycrosley/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        exclude: 'data/.*|models/.*|notebooks/.*'
+
+-   repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+    -   id: flake8
+        exclude: 'data/.*|models/.*|notebooks/.*'
+
+-   repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+    -   id: detect-secrets
+        args: ['--baseline', '.secrets.baseline', '--exclude-files', '.*\.ipynb$']
+        exclude: package.lock.json yarn.lock
+
+### Currently only supporting pyproject.toml with Poetry
+-   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.0
+    hooks:
+    -   id: python-safety-dependencies-check
+        args: ['--ignore=49785,49786,49787,48604,48616,48617,48618']
+
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+    -   id: bandit
+        args: ['--recursive', '--verbose', '-ll', '-c', '.bandit.yaml', 'src']
+        exclude: 'data/.*|models/.*|notebooks/.*|src/models/pre-train_bert/.*|src/models/.*'
