@@ -68,10 +68,7 @@ if __name__ == "__main__":
     data_dir = "./../data"
     model_dir = "./../models"
 
-    print(f"Loading the dataset from {args.data_dir}...")
-
-    # dataset = pd.read_pickle(os.path.join(args.data_dir, "dataset_df.pkl"))
-    dataset = load_dataset("DLTScienceFoundation/ESG-DLT-NER")
+    dataset = pd.read_parquet("hf://datasets/DLTScienceFoundation/ESG-DLT-NER/data/train-00000-of-00001.parquet")
 
     print(f"Loading the label_to_id and id_to_label jsons from {args.data_dir}...")
     # Load the label_to_id and id_to_label jsons
@@ -185,7 +182,6 @@ if __name__ == "__main__":
 
     print(f"Starting the training loop...")
     for train_index, val_index in tqdm(group_kfold.split(dataset, groups=dataset['paper_name']), total=n_splits):
-        # for train_index, val_index in kfold.split(dataset):
 
         # Split data into training and validation
         train_data, val_data = dataset.iloc[train_index], dataset.iloc[val_index]
