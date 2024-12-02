@@ -8,6 +8,8 @@ import json
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer
+from datasets import load_dataset
+
 # from nervaluate import Evaluator
 from sklearn.model_selection import KFold, GroupKFold
 from datasets import Dataset, DatasetDict, Features, ClassLabel, Sequence, Value
@@ -55,11 +57,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print(f"Is CUDA available: {torch.cuda.is_available()}")
-    print(f"Available GPUs: {torch.cuda.device_count()}")
-    print(f"Type of device: {torch.cuda.get_device_name(0)}")
 
     # Clean up the GPU memory
-    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        print(f"Type of device: {torch.cuda.get_device_name(0)}")
+        print(f"Available GPUs: {torch.cuda.device_count()}")
 
     # Load the dataset
     data_dir = "./../data"
@@ -67,7 +70,8 @@ if __name__ == "__main__":
 
     print(f"Loading the dataset from {args.data_dir}...")
 
-    dataset = pd.read_pickle(os.path.join(args.data_dir, "dataset_df.pkl"))
+    # dataset = pd.read_pickle(os.path.join(args.data_dir, "dataset_df.pkl"))
+    dataset = load_dataset("DLTScienceFoundation/ESG-DLT-NER")
 
     print(f"Loading the label_to_id and id_to_label jsons from {args.data_dir}...")
     # Load the label_to_id and id_to_label jsons
@@ -144,10 +148,8 @@ if __name__ == "__main__":
     data_collator = DataCollatorForTokenClassification(tokenizer)
 
     # Clear the GPU memory
-    torch.cuda.empty_cache()
-
-    # # Define the KFold instance
-    # kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # Initialize the GroupKFold class
     n_splits = 5
@@ -170,9 +172,9 @@ if __name__ == "__main__":
     results = []
     evaluations = []
 
-    # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-    torch.cuda.empty_cache()
+    # Clear the GPU memory
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     tokenizer.deprecation_warnings["Asking-to-pad-a-fast-tokenizer"] = True
 
@@ -191,9 +193,6 @@ if __name__ == "__main__":
         # Create training and validation datasets
         train_dataset = Dataset.from_pandas(train_data, features=features)
         eval_dataset = Dataset.from_pandas(val_data, features=features)
-
-        # # Combine datasets into a DatasetDict
-        # datasets = DatasetDict({"train": train_dataset, "test": eval_dataset})
 
         # Create Trainer instance
         trainer = Trainer(
@@ -215,20 +214,6 @@ if __name__ == "__main__":
 
         # Save the scores for the models:
         scores.append(metrics)
-
-        # # Format predictions and labels for nervaluate
-        # pred_tags = [[id_to_label[p_i] for p_i in p] for p in predictions]
-        # true_tags = [[id_to_label[l_i] for l_i in l] for l in labels]
-
-        # # Evaluate with nervaluate
-        # evaluator = Evaluator(true_tags, pred_tags, tags=unique_labels, loader='list')
-        # results, results_by_tag = evaluator.evaluate()
-
-        # # Store results
-        # evaluations.append(results)
-
-    # # Compute average of results
-    # avg_results = {key: np.mean([result[key] for result in evaluations]) for key in evaluations[0].keys()}
 
     # Save the model to local storage
     print(f"Saving the model to {model_dir}...")
