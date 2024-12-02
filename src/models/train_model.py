@@ -68,15 +68,22 @@ if __name__ == "__main__":
     data_dir = "./../data"
     model_dir = "./../models"
 
+    # Load the dataset from the HuggingFace datasets library
     dataset = pd.read_parquet("hf://datasets/DLTScienceFoundation/ESG-DLT-NER/data/train-00000-of-00001.parquet")
 
+    # Convert format of certain columns to list
+    dataset["input_ids"] = dataset["input_ids"].apply(lambda x: list(x))
+    dataset["attention_mask"] = dataset["attention_mask"].apply(lambda x: list(x))
+    dataset["labels"] = dataset["labels"].apply(lambda x: list(x))
+    dataset["ner_tags"] = dataset["ner_tags"].apply(lambda x: list(x))
+    dataset["tokens"] = dataset["tokens"].apply(lambda x: list(x))
+
+    # Drop columns not needed
+    dataset.drop(columns=["__index_level_0__", "text"], inplace=True)
+
     print(f"Loading the label_to_id and id_to_label jsons from {args.data_dir}...")
-    # Load the label_to_id and id_to_label jsons
     with open(os.path.join(args.data_dir, "label_to_id.json"), "r") as f:
         label_to_id = json.load(f)
-
-    # with open(os.path.join(args.data_dir, "id_to_label.json"), "r") as f:
-    #     id_to_label = json.load(f)
 
     id_to_label = {v: k for k, v in label_to_id.items()}
 
@@ -153,6 +160,7 @@ if __name__ == "__main__":
     group_kfold = GroupKFold(n_splits=n_splits)
 
     print(f"Defining the features...")
+
     # Define your features
     features = Features({
         'input_ids': Sequence(Value('int64')),
@@ -160,9 +168,7 @@ if __name__ == "__main__":
         'labels': Sequence(ClassLabel(num_classes=len(unique_labels), names=unique_labels)),
         'ner_tags': Sequence(ClassLabel(num_classes=len(unique_labels), names=unique_labels)),
         'tokens': Sequence(feature=Value(dtype='string')),
-        'attention_mask': Sequence(Value('int64')),
-        'paper_name': Value(dtype='string'),
-        '__index_level_0__': Value(dtype='int64')
+        'paper_name': Value(dtype='string')
     })
 
     # Store results from each fold
@@ -187,8 +193,8 @@ if __name__ == "__main__":
         train_data, val_data = dataset.iloc[train_index], dataset.iloc[val_index]
 
         # Create training and validation datasets
-        train_dataset = Dataset.from_pandas(train_data, features=features)
-        eval_dataset = Dataset.from_pandas(val_data, features=features)
+        train_dataset = Dataset.from_pandas(train_data, features=features, preserve_index=False)
+        eval_dataset = Dataset.from_pandas(val_data, features=features, preserve_index=False)
 
         # Create Trainer instance
         trainer = Trainer(
