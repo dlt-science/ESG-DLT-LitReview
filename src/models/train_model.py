@@ -123,7 +123,7 @@ if __name__ == "__main__":
         do_eval=True,
         gradient_accumulation_steps=2,
         # allows to effectively have a larger batch size while using less memory per step
-        fp16=True,  # Enable mixed precision training
+        fp16=False if torch.backends.mps.is_available() else True,  # Enable mixed precision training
         local_rank=0,  # Enable distributed training. It is
         use_mps_device=True if torch.backends.mps.is_available() else False
     )
